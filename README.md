@@ -1,24 +1,48 @@
-# Get started with FusionAuth in 5 minutes or less
+# FusionAuth Event Planner Application
 
-This project is an example Node.js application that illustrates how to integrate with FusionAuth using the Authorization Code grant.
+This project is a **FusionAuth-integrated Event Planner Application** built using **Express.js** and **Pug** templates based on FusionAuth documentation. It showcases the implementation of user authentication, custom data storage, Two-Factor Authentication (2FA), and Role-Based Access Control (RBAC) using FusionAuth.
 
-This assumes you already have a running FusionAuth instance, user and application running locally. If you don't, please see the [5-Minute Setup Guide](https://fusionauth.io/docs/v1/tech/5-minute-setup-guide) to do so.
+## Challenge Requirements
 
-* log into the admin UI of FusionAuth
-** update your FusionAuth application to allow a redirect of `http://localhost:3000/oauth-redirect`
-** add a logout url of `http://localhost:3000/logout`
-** make sure your user has a first name.
-** note your client id and client secret
-* copy `.env.sample` to `.env` and update it with your Client Id, Client Secret and FusionAuth instance base URL.
-* run `npm install`
-* `npm start`
+This application addresses the following requirements:
 
-Go to http://localhost:3000/ and login with the previously created user.
+1. **FusionAuth Quickstart and Local Setup**:
+   - A local FusionAuth instance is running on port `9011`.
+   - The application is set up to authenticate users via FusionAuth.
 
-You should see 'Hello <name>'
+2. **Custom User Data**:
+   - Users can add additional information like nickname, favorite snack, and hobby to their profile.
+   - This data is stored in the `user.data` object in FusionAuth.
 
-You should be able to logout as well.
+3. **Two-Factor Authentication (2FA)**:
+   - Users can enable or disable 2FA from their profile settings.
+   - If 2FA is enabled, users are prompted for a Time-Based One-Time Password (TOTP) during login.
 
-## Last updated
+4. **Role-Based Access Control (RBAC)**:
+   - Roles like "Admin", "Editor", and "Viewer" have been implemented.
+   - Access to different parts of the application is restricted based on the user's role.
+   
+## Features
 
-Aug 2024
+- **FusionAuth Authentication**: Authenticate users with FusionAuth, using secure OAuth2 flow with PKCE.
+- **Custom User Data**: Store additional user data (e.g., nickname, snack, hobby) in FusionAuth's custom data fields.
+- **Two-Factor Authentication (2FA)**: Allow users to enable/disable 2FA and require 2FA for login if enabled.
+- **Role-Based Access Control**: Implement roles like Admin, Editor, and Viewer, and restrict access to certain features based on the user's role.
+- **Event Management**: Authenticated users can create, view, edit, and delete events.
+
+## Tech Stack
+
+- **Backend**: Node.js, Express.js
+- **Frontend**: Pug templates, Bootstrap
+- **Authentication**: FusionAuth (OAuth2 + PKCE)
+- **Authorization**: Role-based access control via FusionAuth roles
+- **Two-Factor Authentication**: TOTP-based 2FA using FusionAuth
+
+## Getting Started
+
+### Prerequisites
+
+- [Node.js](https://nodejs.org/) installed on your machine.
+- [FusionAuth](https://fusionauth.io/) installed locally and running on port `9011`.
+- A FusionAuth application and user roles configured (Admin, Editor, Viewer).
+
