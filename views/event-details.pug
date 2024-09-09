@@ -13,4 +13,4 @@ block content
   else
     p You must log in to edit or delete this event.
     // Add Login button when the user isn't logged in
-    a(href=fusionAuthURL+'/oauth2/authorize?client_id='+clientId+'&response_type=code&redirect_uri=http://localhost:3000/oauth-redirect&scope=offline_access&state='+stateValue+'&code_challenge='+challenge+'&code_challenge_method=S256' class="btn btn-primary") Login to Edit/Delete
+    a(href=`/login-with-redirect?redirect_uri=/events/${event.id}` class="btn btn-primary") Login to Edit/Delete

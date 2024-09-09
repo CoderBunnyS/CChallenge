@@ -65,6 +65,27 @@ router.get('/', function (req, res, next) {
   });
 });
 
+// New Route: Login with Redirect
+router.get('/login-with-redirect', (req, res) => {
+  const redirectUri = req.query.redirect_uri;
+
+  // Store the intended redirect URI in the session
+  req.session.redirectUri = redirectUri;
+
+  // Generate the PKCE challenge and state value
+  const stateValue = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+  const pkcePair = pkceChallenge.default();
+  const codeChallenge = pkcePair.code_challenge;
+  const codeVerifier = pkcePair.code_verifier;
+
+  // Store state and verifier in the session
+  req.session.stateValue = stateValue;
+  req.session.verifier = codeVerifier;
+
+  // Redirect to FusionAuth's OAuth login page
+  res.redirect(`${fusionAuthURL}/oauth2/authorize?client_id=${clientId}&response_type=code&redirect_uri=http://localhost:3000/oauth-redirect&scope=offline_access&state=${stateValue}&code_challenge=${codeChallenge}&code_challenge_method=S256`);
+});
+
 // OAuth Redirect Route
 router.get('/oauth-redirect', function (req, res, next) {
   const stateFromServer = req.query.state;
@@ -74,19 +95,20 @@ router.get('/oauth-redirect', function (req, res, next) {
     return;
   }
 
-  client.exchangeOAuthCodeForAccessTokenUsingPKCE(
-    req.query.code,
-    clientId,
-    clientSecret,
-    'http://localhost:3000/oauth-redirect',
-    req.session.verifier
-  )
+  client.exchangeOAuthCodeForAccessTokenUsingPKCE(req.query.code, clientId, clientSecret, 'http://localhost:3000/oauth-redirect', req.session.verifier)
     .then((response) => {
       return client.retrieveUserUsingJWT(response.response.access_token);
     })
     .then((response) => {
       req.session.user = response.response.user;
-      res.redirect(302, '/');
+
+      // Retrieve the stored redirect URI from the session, or default to home page
+      const redirectUri = req.session.redirectUri || '/';
+
+      // Clear the session variable after use
+      req.session.redirectUri = null;
+
+      res.redirect(302, redirectUri); // Redirect to the custom URI or home page
     })
     .catch((err) => {
       console.error("Error during OAuth:", JSON.stringify(err));
@@ -134,7 +156,6 @@ router.post('/create-event', (req, res) => {
 // Event Details Page (GET)
 router.get('/events/:id', (req, res) => {
   const eventId = parseInt(req.params.id);
-
   const events = readEventsFromFile(); // Read events from the file
   const event = events.find(e => e.id === eventId);
 
@@ -142,10 +163,22 @@ router.get('/events/:id', (req, res) => {
     return res.status(404).send('Event not found');
   }
 
+  // Generate PKCE challenge and stateValue
+  const stateValue = Math.random().toString(36).substring(2, 15) + 
+                     Math.random().toString(36).substring(2, 15);
+  const pkcePair = pkceChallenge.default();
+  const codeVerifier = pkcePair.code_verifier;
+  const codeChallenge = pkcePair.code_challenge;
+
+  // Pass FusionAuth details and the event data to the template
   res.render('event-details', {
     title: `Event: ${event.name}`,
     event: event,
-    user: req.session.user
+    user: req.session.user,
+    clientId: process.env.CLIENT_ID, // Use your FusionAuth client ID from env
+    stateValue: stateValue,
+    challenge: codeChallenge,
+    fusionAuthURL: process.env.BASE_URL // Base URL for FusionAuth
   });
 });
 
