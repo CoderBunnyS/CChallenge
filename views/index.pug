@@ -1,10 +1,10 @@
 extends layout
 
-
 block content
-  h1= title
+  h1 Event Planner
+  
   if user
-    p Hello #{user.firstName}
+    p Hello, #{user.firstName}!
     // tag::logoutLink[]
     a(href=fusionAuthURL+'/oauth2/logout/?client_id='+clientId) Logout
     // end::logoutLink[]
@@ -12,3 +12,28 @@ block content
     a(href=fusionAuthURL+'/oauth2/authorize?client_id='+clientId+'&response_type=code&redirect_uri=http%3A%2F%2Flocalhost%3A3000%2Foauth-redirect&scope=offline_access&state='+stateValue+'&code_challenge='+challenge+'&code_challenge_method=S256') Login
 
   p Welcome to #{title}
+
+  // Event planner main content
+  div#welcome-section
+    h2 Plan Your Next Event
+    p Organize your events and invite guests with our seamless interface.
+
+    if user
+      a(href="/create-event" class="btn btn-primary") Create New Event
+    else
+      p You need to log in to create or manage events.
+
+  // Upcoming Events Section
+  div#event-section
+    h3 Upcoming Events
+    if events && events.length > 0
+      ul.event-list
+        each event in events
+          li
+            h4 #{event.name}
+            p Date: #{event.date}
+            p Location: #{event.location}
+            // Use proper interpolation in the href attribute using backticks for string interpolation
+            a(href=`/events/${event.id}` class='btn btn-secondary') View Details
+    else
+      p No events available. Start by creating your first event!

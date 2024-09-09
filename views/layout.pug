@@ -3,5 +3,15 @@ html
   head
     title= title
     link(rel='stylesheet', href='/stylesheets/style.css')
+    link(rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css")
   body
-    block content
+    // Flexbox wrapper to ensure footer stays at the bottom
+    .wrapper
+      // Main content container that takes up available space
+      .main-container
+        block content
+
+      // Footer stays at the bottom
+      footer
+        .footer-container
+          p © 2024 Event Planner. All rights reserved.

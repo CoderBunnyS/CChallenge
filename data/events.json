@@ -1,0 +1,14 @@
+[
+  {
+    "id": 1,
+    "name": "Book Club",
+    "date": "2024-09-10",
+    "location": "Online"
+  },
+  {
+    "id": 2,
+    "name": "Neighborhood Yard Sale",
+    "date": "2024-09-13",
+    "location": "Your neighborhood"
+  }
+]

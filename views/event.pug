@@ -1,0 +1,23 @@
+extends layout
+
+block content
+  h1 Create a New Event
+
+  if !user
+    p You must be logged in to create an event.
+    a(href=fusionAuthURL+'/oauth2/authorize?client_id='+clientId+'&response_type=code&redirect_uri=http%3A%2F%2Flocalhost%3A3000%2Foauth-redirect&scope=offline_access&state='+stateValue+'&code_challenge='+challenge+'&code_challenge_method=S256') Login
+  else
+    form(action="/create-event" method="POST")
+      div.form-group
+        label(for="name") Event Name
+        input(type="text" name="name" id="name" required)
+
+      div.form-group
+        label(for="date") Event Date
+        input(type="date" name="date" id="date" required)
+
+      div.form-group
+        label(for="location") Event Location
+        input(type="text" name="location" id="location" required)
+
+      button(type="submit" class="btn btn-primary") Create Event

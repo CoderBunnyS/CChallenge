@@ -1,83 +1,223 @@
 const express = require('express');
 const router = express.Router();
-const {FusionAuthClient} = require('@fusionauth/typescript-client');
-
-// tag::clientIdSecret[]
-// set in the environment or directly
-const clientId = process.env.CLIENT_ID; // or set directly
-const clientSecret = process.env.CLIENT_SECRET; // or set directly
-// end::clientIdSecret[]
-
-// tag::baseURL[]
-const fusionAuthURL = process.env.BASE_URL;
-// end::baseURL[]
-
-const client = new FusionAuthClient('noapikeyneeded', fusionAuthURL);
+const { FusionAuthClient } = require('@fusionauth/typescript-client');
 const pkceChallenge = require('pkce-challenge');
 
-// tag::logoutRoute[]
-/* logout page. */
+const fs = require('fs');
+const path = require('path');
+
+// Define the path to the events.json file
+const filePath = path.join(__dirname, '../data/events.json');
+
+// Function to read events from the JSON file
+function readEventsFromFile() {
+  try {
+    const data = fs.readFileSync(filePath, 'utf8');
+    return JSON.parse(data || '[]'); // Return empty array if file is empty
+  } catch (err) {
+    console.error('Error reading events from file:', err);
+    return [];
+  }
+}
+
+// Function to write events to the JSON file
+function writeEventsToFile(events) {
+  try {
+    fs.writeFileSync(filePath, JSON.stringify(events, null, 2), 'utf8');
+  } catch (err) {
+    console.error('Error writing events to file:', err);
+  }
+}
+
+// Set environment variables
+const clientId = process.env.CLIENT_ID;
+const clientSecret = process.env.CLIENT_SECRET;
+const fusionAuthURL = process.env.BASE_URL;
+
+const client = new FusionAuthClient('noapikeyneeded', fusionAuthURL);
+
+// Logout Route
 router.get('/logout', function (req, res, next) {
   req.session.destroy();
   res.redirect(302, '/');
 });
-// end::logoutRoute[]
 
-/* GET home page. */
+// Home Page Route
 router.get('/', function (req, res, next) {
-  const stateValue = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+  const stateValue = Math.random().toString(36).substring(2, 15) +
+                     Math.random().toString(36).substring(2, 15);
   req.session.stateValue = stateValue;
 
-  //generate the pkce challenge/verifier dict
   const pkce_pair = pkceChallenge.default();
-  // Store the PKCE verifier in session
   req.session.verifier = pkce_pair['code_verifier'];
   const challenge = pkce_pair['code_challenge'];
-  res.render('index', {user: req.session.user, title: 'FusionAuth Example', clientId: clientId, challenge: challenge, stateValue: stateValue, fusionAuthURL: fusionAuthURL});
+
+  const events = readEventsFromFile(); // Read events from the JSON file
+
+  res.render('index', {
+    user: req.session.user,
+    title: 'Event Planner',
+    clientId: clientId,
+    challenge: challenge,
+    stateValue: stateValue,
+    fusionAuthURL: fusionAuthURL,
+    events: events // Pass events to the home page
+  });
 });
 
-// tag::fullOAuthCodeExchange[]
-/* OAuth return from FusionAuth */
+// OAuth Redirect Route
 router.get('/oauth-redirect', function (req, res, next) {
   const stateFromServer = req.query.state;
   if (stateFromServer !== req.session.stateValue) {
     console.log("State doesn't match. uh-oh.");
-    console.log("Saw: " + stateFromServer + ", but expected: " + req.session.stateValue);
     res.redirect(302, '/');
     return;
   }
 
-// tag::exchangeOAuthCode[]
-  // This code stores the user in a server-side session
- client.exchangeOAuthCodeForAccessTokenUsingPKCE(req.query.code,
-                                                 clientId,
-                                                 clientSecret,
-                                                 'http://localhost:3000/oauth-redirect',
-                                                 req.session.verifier)
-// end::exchangeOAuthCode[]
-      .then((response) => {
-        console.log(response.response.access_token);
-        return client.retrieveUserUsingJWT(response.response.access_token);
-      })
-      .then((response) => {
-// tag::setUserInSession[]
-        req.session.user = response.response.user;
-        return response;
-      })
-// end::setUserInSession[]
-      .then((response) => {
-        res.redirect(302, '/');
-      }).catch((err) => {console.log("in error"); console.error(JSON.stringify(err));});
-
+  client.exchangeOAuthCodeForAccessTokenUsingPKCE(
+    req.query.code,
+    clientId,
+    clientSecret,
+    'http://localhost:3000/oauth-redirect',
+    req.session.verifier
+  )
+    .then((response) => {
+      return client.retrieveUserUsingJWT(response.response.access_token);
+    })
+    .then((response) => {
+      req.session.user = response.response.user;
+      res.redirect(302, '/');
+    })
+    .catch((err) => {
+      console.error("Error during OAuth:", JSON.stringify(err));
+      res.redirect(302, '/');
+    });
 });
-// end::fullOAuthCodeExchange[]
 
-  // This code can be set in the last promise above to send the access and refresh tokens
-  // back to the browser as secure, HTTP-only cookies, an alternative to storing user info in the session
-  //     .then((response) => {
-  //       res.cookie('access_token', response.response.access_token, {httpOnly: true});
-  //       res.cookie('refresh_token', response.response.refresh_token, {httpOnly: true});
-  //       res.redirect(302, '/');
-  //     }).catch((err) => {console.log("in error"); console.error(JSON.stringify(err));});
+// Create Event Page (GET)
+router.get('/create-event', (req, res) => {
+  if (!req.session.user) {
+    return res.redirect('/'); // Redirect if not logged in
+  }
+
+  res.render('create-event', {
+    title: 'Create New Event',
+    user: req.session.user
+  });
+});
+
+// Create Event (POST)
+router.post('/create-event', (req, res) => {
+  const { name, date, location } = req.body;
+
+  if (!name || !date || !location) {
+    return res.status(400).send('All fields are required');
+  }
+
+  const events = readEventsFromFile(); // Read existing events from the file
+
+  const newEvent = {
+    id: events.length > 0 ? events[events.length - 1].id + 1 : 1, // Generate a new ID
+    name,
+    date,
+    location
+  };
+
+  events.push(newEvent); // Add the new event to the array
+
+  writeEventsToFile(events); // Write the updated array back to the file
+
+  console.log('Event created:', newEvent);
+  res.redirect('/'); // Redirect back to the home page after saving
+});
+
+// Event Details Page (GET)
+router.get('/events/:id', (req, res) => {
+  const eventId = parseInt(req.params.id);
+
+  const events = readEventsFromFile(); // Read events from the file
+  const event = events.find(e => e.id === eventId);
+
+  if (!event) {
+    return res.status(404).send('Event not found');
+  }
+
+  res.render('event-details', {
+    title: `Event: ${event.name}`,
+    event: event,
+    user: req.session.user
+  });
+});
+
+// Edit Event Page (GET)
+router.get('/events/:id/edit', (req, res) => {
+  if (!req.session.user) {
+    return res.redirect('/'); // Redirect if not logged in
+  }
+
+  const eventId = parseInt(req.params.id);
+
+  const events = readEventsFromFile(); // Read events from the file
+  const event = events.find(e => e.id === eventId);
+
+  if (!event) {
+    return res.status(404).send('Event not found');
+  }
+
+  res.render('edit-event', {
+    title: `Edit Event: ${event.name}`,
+    event: event,
+    user: req.session.user
+  });
+});
+
+// Update Event (POST)
+router.post('/events/:id/edit', (req, res) => {
+  if (!req.session.user) {
+    return res.redirect('/'); // Redirect if not logged in
+  }
+
+  const eventId = parseInt(req.params.id);
+  const { name, date, location } = req.body;
+
+  const events = readEventsFromFile(); // Read events from the file
+  const eventIndex = events.findIndex(e => e.id === eventId);
+
+  if (eventIndex === -1) {
+    return res.status(404).send('Event not found');
+  }
+
+  // Update the event
+  events[eventIndex].name = name;
+  events[eventIndex].date = date;
+  events[eventIndex].location = location;
+
+  writeEventsToFile(events); // Write the updated events back to the file
+
+  res.redirect(`/events/${eventId}`); // Redirect to the updated event details page
+});
+
+// Delete Event (POST)
+router.post('/events/:id/delete', (req, res) => {
+  if (!req.session.user) {
+    return res.redirect('/'); // Redirect if not logged in
+  }
+
+  const eventId = parseInt(req.params.id);
+
+  let events = readEventsFromFile(); // Read events from the file
+
+  const eventIndex = events.findIndex(e => e.id === eventId);
+
+  if (eventIndex === -1) {
+    return res.status(404).send('Event not found');
+  }
+
+  events.splice(eventIndex, 1); // Remove the event from the array
+
+  writeEventsToFile(events); // Write the updated events back to the file
+
+  res.redirect('/'); // Redirect to the home page after deleting the event
+});
 
 module.exports = router;

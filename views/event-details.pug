@@ -1,0 +1,16 @@
+extends layout
+
+block content
+  h1= event.name
+  p Date: #{event.date}
+  p Location: #{event.location}
+
+  // If user is logged in, show Edit and Delete buttons
+  if user
+    a(href=`/events/${event.id}/edit` class='btn btn-secondary') Edit Event
+    form(action=`/events/${event.id}/delete` method="POST" style="display:inline-block;")
+      button(type="submit" class="btn btn-danger") Delete Event
+  else
+    p You must log in to edit or delete this event.
+    // Add Login button when the user isn't logged in
+    a(href=fusionAuthURL+'/oauth2/authorize?client_id='+clientId+'&response_type=code&redirect_uri=http://localhost:3000/oauth-redirect&scope=offline_access&state='+stateValue+'&code_challenge='+challenge+'&code_challenge_method=S256' class="btn btn-primary") Login to Edit/Delete
