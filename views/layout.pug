@@ -7,6 +7,15 @@ html
   body
     // Flexbox wrapper to ensure footer stays at the bottom
     .wrapper
+      // Header with navigation links
+      nav
+        a(href='/') Home
+        if user
+          a(href='/profile') Profile
+          a(href='/logout') Logout
+        else
+          a(href=fusionAuthURL+'/oauth2/authorize?client_id='+clientId+'&response_type=code&redirect_uri=http%3A%2F%2Flocalhost%3A3000%2Foauth-redirect&scope=offline_access&state='+stateValue+'&code_challenge='+challenge+'&code_challenge_method=S256') Login
+
       // Main content container that takes up available space
       .main-container
         block content

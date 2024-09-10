@@ -34,7 +34,7 @@ const clientId = process.env.CLIENT_ID;
 const clientSecret = process.env.CLIENT_SECRET;
 const fusionAuthURL = process.env.BASE_URL;
 
-const client = new FusionAuthClient('noapikeyneeded', fusionAuthURL);
+const client = new FusionAuthClient('DevKey8675309', 'http://localhost:9011');
 
 // Logout Route
 router.get('/logout', function (req, res, next) {
@@ -101,14 +101,8 @@ router.get('/oauth-redirect', function (req, res, next) {
     })
     .then((response) => {
       req.session.user = response.response.user;
-
-      // Retrieve the stored redirect URI from the session, or default to home page
-      const redirectUri = req.session.redirectUri || '/';
-
-      // Clear the session variable after use
-      req.session.redirectUri = null;
-
-      res.redirect(302, redirectUri); // Redirect to the custom URI or home page
+      req.session.customData = response.response.user.data; // Store custom data in session
+      res.redirect(req.session.redirectUri || '/');
     })
     .catch((err) => {
       console.error("Error during OAuth:", JSON.stringify(err));
@@ -252,5 +246,64 @@ router.post('/events/:id/delete', (req, res) => {
 
   res.redirect('/'); // Redirect to the home page after deleting the event
 });
+
+// Profile Page (GET)
+router.get('/profile', (req, res) => {
+  if (!req.session.user) {
+    return res.redirect('/'); // Redirect if not logged in
+  }
+
+  res.render('profile', {
+    user: req.session.user // Pass user and custom data to the template
+  });
+});
+
+// Profile Update (POST)
+router.post('/profile/update', (req, res) => {
+  if (!req.session.user) {
+    return res.redirect('/'); // Redirect if not logged in
+  }
+
+  // Get updated data from the form
+  const { nickname, favoriteEvent, hobby } = req.body;
+
+  // Log the form data for debugging
+  console.log('Received form data:', { nickname, favoriteEvent, hobby });
+
+  // Prepare the data for updating in FusionAuth
+  const userData = {
+    nickname: nickname || null,  // Use `null` if empty
+    favoriteEvent: favoriteEvent || null,  // Use `null` if empty
+    hobby: hobby || null  // Use `null` if empty
+  };
+
+  // Update FusionAuth user.data
+  client.patchUser(req.session.user.id, {
+    user: {
+      data: userData  // Update with only non-empty fields
+    }
+  })
+  .then((response) => {
+    // Log the response for debugging
+    console.log('FusionAuth response:', response.response);
+
+    // Update session with the new user data
+    req.session.user.data = response.response.user.data;
+
+    // Log the updated session data
+    console.log('Updated session data:', req.session.user.data);
+
+    // Redirect back to the profile page
+    res.redirect('/profile');
+  })
+  .catch((err) => {
+    console.error('Error updating profile in FusionAuth:', err);
+    // Redirect back to profile on error
+    res.redirect('/profile');
+  });
+});
+
+
+
 
 module.exports = router;

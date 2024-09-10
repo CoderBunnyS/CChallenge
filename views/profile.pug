@@ -1,0 +1,22 @@
+extends layout
+
+block content
+  h1 Profile Page
+  
+  if user
+    form(action='/profile/update' method='POST')
+      div.form-group
+        label(for='nickname') Nickname
+        input(type='text' id='nickname' name='nickname' value=user.data && user.data.nickname ? user.data.nickname : '' class='form-control')
+
+      div.form-group
+        label(for='favoriteEvent') Favorite Event Type
+        input(type='text' id='favoriteEvent' name='favoriteEvent' value=user.data && user.data.favoriteEvent ? user.data.favoriteEvent : '' class='form-control')
+
+      div.form-group
+        label(for='hobby') Hobby
+        input(type='text' id='hobby' name='hobby' value=user.data && user.data.hobby ? user.data.hobby : '' class='form-control')
+
+      button(type='submit' class='btn btn-primary') Update Profile
+  else
+    p You need to log in to view your profile.

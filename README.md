@@ -11,7 +11,7 @@ This application addresses the following requirements:
    - The application is set up to authenticate users via FusionAuth.
 
 2. **Custom User Data**:
-   - Users can add additional information like nickname, favorite snack, and hobby to their profile.
+   - Users can add additional information like nickname, favorite event, and hobby to their profile.
    - This data is stored in the `user.data` object in FusionAuth.
 
 3. **Two-Factor Authentication (2FA)**:
@@ -25,7 +25,7 @@ This application addresses the following requirements:
 ## Features
 
 - **FusionAuth Authentication**: Authenticate users with FusionAuth, using secure OAuth2 flow with PKCE.
-- **Custom User Data**: Store additional user data (e.g., nickname, snack, hobby) in FusionAuth's custom data fields.
+- **Custom User Data**: Store additional user data (e.g., nickname, event, hobby) in FusionAuth's custom data fields.
 - **Two-Factor Authentication (2FA)**: Allow users to enable/disable 2FA and require 2FA for login if enabled.
 - **Role-Based Access Control**: Implement roles like Admin, Editor, and Viewer, and restrict access to certain features based on the user's role.
 - **Event Management**: Authenticated users can create, view, edit, and delete events.
