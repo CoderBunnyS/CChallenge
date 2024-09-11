@@ -1,0 +1,14 @@
+doctype html
+html
+  head
+    title MFA Setup
+  body
+    h1 MFA Setup
+    p Scan the following QR code with your authenticator app:
+    img(src=qrCodeUrl alt="QR Code")
+    p Or, use the following secret: #{secret.secretBase32Encoded}
+
+    form(action="/profile/mfa-verify" method="POST")
+      label Enter the code from your authenticator app:
+      input(type="text" name="totpCode")
+      button(type="submit") Verify & Enable MFA

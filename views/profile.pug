@@ -2,21 +2,40 @@ extends layout
 
 block content
   h1 Profile Page
-  
-  if user
-    form(action='/profile/update' method='POST')
-      div.form-group
-        label(for='nickname') Nickname
-        input(type='text' id='nickname' name='nickname' value=user.data && user.data.nickname ? user.data.nickname : '' class='form-control')
+  if success
+    p.alert.alert-success Changes saved successfully!
+  if error
+    p.alert.alert-danger Error occurred, please try again.
 
-      div.form-group
-        label(for='favoriteEvent') Favorite Event Type
-        input(type='text' id='favoriteEvent' name='favoriteEvent' value=user.data && user.data.favoriteEvent ? user.data.favoriteEvent : '' class='form-control')
+  h2 User Information
+  p Username: #{user.username}
+  p Email: #{user.email}
 
-      div.form-group
-        label(for='hobby') Hobby
-        input(type='text' id='hobby' name='hobby' value=user.data && user.data.hobby ? user.data.hobby : '' class='form-control')
+  // Profile Data Update Form
+  h2 Update Your Profile
+  form(method="POST", action="/profile/update")
+    .form-group
+      label(for="nickname") Nickname:
+      input.form-control(type="text", name="nickname", value=user.data.nickname || '')
+    .form-group
+      label(for="favoriteEvent") Favorite Event:
+      input.form-control(type="text", name="favoriteEvent", value=user.data.favoriteEvent || '')
+    .form-group
+      label(for="hobby") Hobby:
+      input.form-control(type="text", name="hobby", value=user.data.hobby || '')
+    button.btn.btn-primary(type="submit") Update Profile
 
-      button(type='submit' class='btn btn-primary') Update Profile
+  // MFA Section
+  h2 Multi-Factor Authentication (MFA)
+  if is2FAEnabled
+    p.alert.alert-info MFA is currently enabled.
+    form(method="POST", action="/profile/mfa-toggle")
+      input(type="hidden", name="action", value="disable")
+      .form-group
+        label(for="totpCode") Enter the TOTP code to disable MFA:
+        input.form-control(type="text", name="totpCode", required)
+      button.btn.btn-danger(type="submit") Disable MFA
   else
-    p You need to log in to view your profile.
+    p.alert.alert-warning MFA is not enabled.
+    form(method="POST", action="/profile/mfa-enable")
+      button.btn.btn-success(type="submit") Enable MFA
