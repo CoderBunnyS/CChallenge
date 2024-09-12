@@ -1,26 +1,26 @@
 [
-    {
-        "id": 2,
-        "name": "Neighborhood Yard Sale",
-        "date": "2024-09-13",
-        "location": "Your neighborhood"
-    }, 
-    {
-        "id": 3,
-        "name": "Community Picnic",
-        "date": "2024-09-14",
-        "location": "Your neighborhood park"
-    },
-    {
-        "id": 4,
-        "name": "Community Meeting",
-        "date": "2024-09-15",
-        "location": "Your neighborhood community center"
-    },
-    {
-        "id": 5,
-        "name": "Community Cleanup",
-        "date": "2024-09-16",
-        "location": "Your neighborhood"
-    }
+  {
+    "id": 3,
+    "name": "Community Picnic",
+    "date": "2024-09-14",
+    "location": "Your neighborhood park"
+  },
+  {
+    "id": 4,
+    "name": "Community Meeting",
+    "date": "2024-09-15",
+    "location": "Your neighborhood community center"
+  },
+  {
+    "id": 5,
+    "name": "Community Cleanup",
+    "date": "2024-09-16",
+    "location": "Your neighborhood"
+  },
+  {
+    "id": 6,
+    "name": "Pickup Baseball game",
+    "date": "2024-09-25",
+    "location": "The local park"
+  }
 ]

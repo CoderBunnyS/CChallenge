@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const { FusionAuthClient } = require("@fusionauth/typescript-client");
-const axios = require("axios"); // Include axios
+const axios = require("axios");
 const pkceChallenge = require("pkce-challenge");
 const fs = require("fs");
 const path = require("path");
@@ -40,7 +40,8 @@ function writeEventsToFile(events) {
 }
 
 // Home Page Route (Read events)
-router.get("/", function (req, res, next) {
+router.get("/", function (req, res) {
+ 
   const stateValue =
     Math.random().toString(36).substring(2, 15) +
     Math.random().toString(36).substring(2, 15);
@@ -55,11 +56,11 @@ router.get("/", function (req, res, next) {
   res.render("index", {
     user: req.session.user,
     title: "Event Planner",
-    clientId: clientId,
-    challenge: challenge,
-    stateValue: stateValue,
-    fusionAuthURL: fusionAuthURL,
-    events: events, // Pass events to the home page
+    clientId,
+    challenge,
+    stateValue,
+    fusionAuthURL,
+    events, // Pass events to the home page
   });
 });
 
@@ -84,7 +85,6 @@ router.post("/create-event", (req, res) => {
   }
 
   const events = readEventsFromFile(); // Read existing events from the file
-
   const newEvent = {
     id: events.length > 0 ? events[events.length - 1].id + 1 : 1, // Generate a new ID
     name,
@@ -93,7 +93,6 @@ router.post("/create-event", (req, res) => {
   };
 
   events.push(newEvent); // Add the new event to the array
-
   writeEventsToFile(events); // Write the updated array back to the file
 
   console.log("Event created:", newEvent);
@@ -110,12 +109,40 @@ router.get("/events/:id", (req, res) => {
     return res.status(404).send("Event not found");
   }
 
-  res.render("event-details", {
-    title: `Event: ${event.name}`,
-    event: event,
-    user: req.session.user,
-  });
+  // Ensure the user is logged in and has a role
+  if (req.session.user && req.session.user.registrations && req.session.user.registrations[0].roles) {
+    const userRoles = req.session.user.registrations[0].roles;
+
+    // Determine which buttons/actions to display based on the user's role
+    let canEdit = false;
+    let canDelete = false;
+
+    if (userRoles.includes('admin')) {
+      // Admin can edit and delete
+      canEdit = true;
+      canDelete = true;
+    } else if (userRoles.includes('editor')) {
+      // Editor can only edit
+      canEdit = true;
+    } else if (userRoles.includes('Viewer')) {
+      // Viewer can only view
+      canEdit = false;
+      canDelete = false;
+    }
+
+    res.render("event-details", {
+      title: `Event: ${event.name}`,
+      event: event,
+      user: req.session.user,
+      canEdit: canEdit,  // Pass the edit permission to the view
+      canDelete: canDelete  // Pass the delete permission to the view
+    });
+  } else {
+    // If not logged in, redirect to login or show error
+    res.status(403).send("You need to log in to view event details.");
+  }
 });
+
 
 // Edit Event Page (GET)
 router.get("/events/:id/edit", (req, res) => {
@@ -124,7 +151,6 @@ router.get("/events/:id/edit", (req, res) => {
   }
 
   const eventId = parseInt(req.params.id);
-
   const events = readEventsFromFile(); // Read events from the file
   const event = events.find((e) => e.id === eventId);
 
@@ -134,7 +160,7 @@ router.get("/events/:id/edit", (req, res) => {
 
   res.render("edit-event", {
     title: `Edit Event: ${event.name}`,
-    event: event,
+    event,
     user: req.session.user,
   });
 });
@@ -159,7 +185,6 @@ router.post("/events/:id/edit", (req, res) => {
   events[eventIndex].name = name;
   events[eventIndex].date = date;
   events[eventIndex].location = location;
-
   writeEventsToFile(events); // Write the updated events back to the file
 
   res.redirect(`/events/${eventId}`); // Redirect to the updated event details page
@@ -172,7 +197,6 @@ router.post("/events/:id/delete", (req, res) => {
   }
 
   const eventId = parseInt(req.params.id);
-
   let events = readEventsFromFile(); // Read events from the file
 
   const eventIndex = events.findIndex((e) => e.id === eventId);
@@ -182,7 +206,6 @@ router.post("/events/:id/delete", (req, res) => {
   }
 
   events.splice(eventIndex, 1); // Remove the event from the array
-
   writeEventsToFile(events); // Write the updated events back to the file
 
   res.redirect("/"); // Redirect to the home page after deleting the event
@@ -193,7 +216,7 @@ router.post("/events/:id/delete", (req, res) => {
 //===========================================
 
 // Logout Route
-router.get("/logout", function (req, res, next) {
+router.get("/logout", function (req, res) {
   req.session.destroy();
   res.redirect(302, "/");
 });
@@ -224,7 +247,7 @@ router.get("/login-with-redirect", (req, res) => {
 });
 
 // OAuth Redirect Route
-router.get("/oauth-redirect", function (req, res, next) {
+router.get("/oauth-redirect", function (req, res) {
   const stateFromServer = req.query.state;
   if (stateFromServer !== req.session.stateValue) {
     console.log("State doesn't match. uh-oh.");
@@ -246,6 +269,8 @@ router.get("/oauth-redirect", function (req, res, next) {
     .then((response) => {
       req.session.user = response.response.user;
       req.session.customData = response.response.user.data; // Store custom data in session
+      //console.log("User logged in successfully:", req.session.user); // Log the user details
+      console.log("User Roles:", req.session.user.registrations[0].roles); // Log roles directly, if available
       res.redirect(req.session.redirectUri || "/");
     })
     .catch((err) => {
@@ -268,16 +293,14 @@ router.get("/profile", (req, res) => {
     .retrieveUser(req.session.user.id)
     .then((response) => {
       const user = response.response.user;
-
-      // Check if any twoFactor methods exist
       const is2FAEnabled =
         user.twoFactor &&
         user.twoFactor.methods &&
         user.twoFactor.methods.length > 0;
 
       res.render("profile", {
-        user: user,
-        is2FAEnabled: is2FAEnabled, // Pass 2FA status to the profile template
+        user,
+        is2FAEnabled, // Pass 2FA status to the profile template
       });
     })
     .catch((err) => {
@@ -289,7 +312,6 @@ router.get("/profile", (req, res) => {
 // Enable MFA (POST)
 router.post("/profile/mfa-enable", (req, res) => {
   if (!req.session.user) {
-    console.log("No user in session, redirecting to login");
     return res.redirect("/"); // Redirect if not logged in
   }
 
@@ -302,16 +324,13 @@ router.post("/profile/mfa-enable", (req, res) => {
       const secret = response.response.secretBase32Encoded;
 
       console.log("2FA Secret generated:", secret);
+      req.session.twoFactorSecret = secret; // Store secret in the session
 
-      // Store the secret in the user's session for validation later
-      req.session.twoFactorSecret = secret;
-
-      // Render a QR code page for the user to scan with an Authenticator app
       res.render("mfa-setup", {
         title: "Set Up MFA",
         user: req.session.user,
-        secret: secret, // Send the secret to the page
-        qrCodeUrl: `otpauth://totp/${req.session.user.username}?secret=${secret}&issuer=YourAppName`, // Change the issuer name
+        secret,
+        qrCodeUrl: `otpauth://totp/${req.session.user.username}?secret=${secret}&issuer=YourAppName`, // Customize issuer
       });
     })
     .catch((err) => {
@@ -323,23 +342,21 @@ router.post("/profile/mfa-enable", (req, res) => {
 // Verify MFA (POST)
 router.post("/profile/mfa-verify", (req, res) => {
   if (!req.session.user) {
-    console.log("No user in session, redirecting to login");
     return res.redirect("/"); // Redirect if not logged in
   }
 
   const { totpCode, secret } = req.body;
   const userId = req.session.user.id;
 
-  // Validate the TOTP code
   client
     .verifyTwoFactorCode(userId, {
       code: totpCode,
-      secret: secret,
+      secret,
       method: "authenticator",
     })
     .then(() => {
       console.log("2FA successfully enabled for user:", userId);
-      res.redirect("/profile?success=true"); // MFA enabled
+      res.redirect("/profile?success=true");
     })
     .catch((err) => {
       console.error("Error verifying 2FA:", err);
@@ -350,22 +367,19 @@ router.post("/profile/mfa-verify", (req, res) => {
 // Disable MFA (POST) using Axios
 router.post("/profile/mfa-toggle", (req, res) => {
   if (!req.session.user) {
-    console.log("No user in session, redirecting to login");
     return res.redirect("/"); // Redirect if not logged in
   }
 
-  const { action, totpCode } = req.body; // Capture action (enable/disable) and TOTP code
+  const { action, totpCode } = req.body;
   const userId = req.session.user.id;
 
   if (action === "disable") {
     if (!totpCode) {
-      console.error("No TOTP code provided for disabling MFA.");
       return res.redirect("/profile?error=no_code");
     }
 
-    const apiKey = process.env.FUSIONAUTH_API_KEY || 'DevKey8675309'; // Ensure the API key is set
+    const apiKey = process.env.FUSIONAUTH_API_KEY || 'DevKey8675309';
 
-    // Use Axios to send the DELETE request
     axios
       .delete(`http://localhost:9011/api/user/two-factor/${userId}`, {
         headers: {
@@ -377,17 +391,14 @@ router.post("/profile/mfa-toggle", (req, res) => {
           methodId: "authenticator", // Only allowing authenticator as MFA
         },
       })
-      .then((response) => {
-        console.log("2FA disabled successfully for user:", userId);
-        req.session.user.twoFactor = null; // Remove twoFactor info from session
-        res.redirect("/profile?success=true"); // 2FA disabled
+      .then(() => {
+        req.session.user.twoFactor = null;
+        res.redirect("/profile?success=true");
       })
       .catch((error) => {
-        console.error("Error disabling 2FA:", error.response?.status || error.message);
         res.redirect("/profile?error=true");
       });
   } else {
-    console.error("Invalid MFA action received:", action); // Log invalid action
     res.redirect("/profile?error=true");
   }
 });
@@ -412,12 +423,11 @@ router.post("/profile/update", (req, res) => {
         data: userData,
       },
     })
-    .then((response) => {
-      req.session.user.data = response.response.user.data;
+    .then(() => {
+      req.session.user.data = userData;
       res.redirect("/profile?success=true");
     })
     .catch((err) => {
-      console.error("Error updating profile in FusionAuth:", err);
       res.redirect("/profile");
     });
 });

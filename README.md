@@ -44,5 +44,5 @@ This application addresses the following requirements:
 
 - [Node.js](https://nodejs.org/) installed on your machine.
 - [FusionAuth](https://fusionauth.io/) installed locally and running on port `9011`.
-- A FusionAuth application and user roles configured (Admin, Editor, Viewer).
+
 

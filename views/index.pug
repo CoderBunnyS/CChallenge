@@ -2,19 +2,20 @@ extends layout
 
 block content
   h1 Event Planner
-  
+
   if user
-   p Hello, #{user.data && user.data.nickname ? user.data.nickname : user.firstName}!
+    p Hello, #{user.data && user.data.nickname ? user.data.nickname : user.firstName}!
+    p= "User roles: " + user.registrations[0].roles
 
   p Welcome to #{title}
 
   // Event planner main content
   div#welcome-section
     h2 Plan Your Next Event
-    p Organize your events and invite guests with our seamless interface.
+    p Organize your events and invite guests with ease.
 
     if user
-      a(href="/create-event" class="btn btn-primary") Create New Event
+      a(href="/create-event" class="btn btn-primary large-btn") + Create New Event
     else
       p You need to log in to create or manage events.
 
@@ -22,13 +23,13 @@ block content
   div#event-section
     h3 Upcoming Events
     if events && events.length > 0
-      ul.event-list
+      div.event-grid
         each event in events
-          li
+          div.card
             h4 #{event.name}
             p Date: #{event.date}
             p Location: #{event.location}
-            // Use proper interpolation in the href attribute using backticks for string interpolation
-            a(href=`/events/${event.id}` class='btn btn-secondary') View Details
+            if user && user.registrations && (user.registrations[0].roles.includes('Admin') || user.registrations[0].roles.includes('Editor') || user.registrations[0].roles.includes('Viewer'))
+              a(href=`/events/${event.id}` class='btn btn-secondary') View Details
     else
       p No events available. Start by creating your first event!

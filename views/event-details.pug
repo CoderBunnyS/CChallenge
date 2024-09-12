@@ -5,12 +5,21 @@ block content
   p Date: #{event.date}
   p Location: #{event.location}
 
-  // If user is logged in, show Edit and Delete buttons
-  if user
-    a(href=`/events/${event.id}/edit` class='btn btn-secondary') Edit Event
-    form(action=`/events/${event.id}/delete` method="POST" style="display:inline-block;")
-      button(type="submit" class="btn btn-danger") Delete Event
+  // Check if the user is logged in
+  if user && user.registrations && user.registrations[0].roles
+    // Check if the user is an admin
+    if user.registrations[0].roles.includes('Admin')
+      a(href=`/events/${event.id}/edit` class='btn btn-secondary') Edit Event
+      form(action=`/events/${event.id}/delete` method="POST" style="display:inline-block;")
+        button(type="submit" class="btn btn-danger") Delete Event
+
+    // If not admin, check if the user is an editor
+    if user.registrations[0].roles.includes('Editor')
+      a(href=`/events/${event.id}/edit` class='btn btn-secondary') Edit Event
+
+    // If the user is only a viewer
+    if user.registrations[0].roles.includes('Viewer')
+      p You have viewing access only.
+
   else
-    p You must log in to edit or delete this event.
-    // Add Login button when the user isn't logged in
-    a(href=`/login-with-redirect?redirect_uri=/events/${event.id}` class="btn btn-primary") Login to Edit/Delete
+    p You are not authorized to view this content.
