@@ -8,7 +8,6 @@ html, body {
   color: #333;
   display: flex;
   flex-direction: column;
-  scroll-behavior: smooth;
 }
 
 h1, h2, h3 {
@@ -20,12 +19,28 @@ h1, h2, h3 {
 p {
   font-size: 1.1rem;
   line-height: 1.6;
-  text-align: center;
   color: #7d8a8f;
+  text-align: center;
+}
+
+/* Container and Flexbox layout */
+.wrapper {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.main-container {
+  flex: 1;
+  padding: 20px;
+}
+
+#user-info {
+  text-align: right;
 }
 
 .container {
-  max-width: 900px;
+  max-width: 800px;
   margin: 0 auto;
   padding: 20px;
   background-color: #fff;
@@ -33,90 +48,309 @@ p {
   border-radius: 10px;
 }
 
-/* Header and Footer */
-header {
-  background-color: #0078D4;
-  padding: 20px;
-  text-align: center;
-  color: white;
-  font-weight: bold;
-  font-size: 1.8rem;
+/* Navigation Bar */
+nav {
+  background-color: #2980b9;
+  padding: 15px;
+  text-align: right;
 }
 
+nav a {
+  color: white;
+  margin: 0 15px;
+  font-size: 1rem;
+  text-decoration: none;
+}
+
+nav a:hover {
+  color: #e0e0e0;
+}
+
+/* Footer */
 .footer-container {
-  background-color: #0078D4;
+  background-color: #34495e;
   padding: 10px;
   text-align: center;
   color: white;
-  position: relative;
+  margin-top: auto;
   width: 100%;
   bottom: 0;
 }
 
-/* Event Grid Layout */
+/* Form Layout */
+.form-group {
+  margin-bottom: 15px;
+  text-align: left;
+}
+
+label {
+  display: block;
+  font-weight: bold;
+  margin-bottom: 5px;
+  font-size: 1.1rem;
+  color: #1c3b57;
+}
+
+input[type="text"],
+input[type="date"] {
+  width: 100%;
+  padding: 12px;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+  margin-bottom: 10px;
+}
+
+/* Buttons */
+.btn {
+  display: inline-block;
+  padding: 12px 25px;
+  margin: 10px 10px;
+  font-size: 1rem;
+  cursor: pointer;
+  border-radius: 5px;
+  text-align: center;
+  text-decoration: none;
+  color: white;
+  background-color: #2980b9;
+  transition: background-color 0.2s ease;
+  width: 150px;
+  height: 50px; /* Ensure consistent button height */
+  line-height: 1.2rem; /* Center the text vertically */
+}
+
+.btn:hover {
+  background-color: #1a5980;
+}
+
+.btn-primary {
+  background-color: #2980b9;
+}
+
+.btn-primary:hover {
+  background-color: #216b95;
+}
+
+.btn-secondary {
+  background-color: #95a5a6;
+}
+
+.btn-secondary:hover {
+  background-color: #7b8b8d;
+}
+
+.btn-danger {
+  background-color: #e74c3c;
+}
+
+.btn-danger:hover {
+  background-color: #c0392b;
+}
+
+/* Center the buttons */
+.button-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 15px; /* Add spacing between buttons */
+}
+
+button[type="submit"] {
+  width: auto;
+  padding: 10px 20px;
+  font-size: 1.1rem;
+  color: white;
+  background-color: #2980b9; /* Blue button */
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  height: 50px; /* Ensure consistent height for button elements */
+}
+
+button[type="submit"]:hover {
+  background-color: #216b95;
+}
+
+/* Event List */
 .event-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 20px;
-  margin-top: 20px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
 }
 
-.event-grid .card {
-  background-color: #fff;
+.event-list li {
+  background-color: #ecf0f1;
   padding: 20px;
   border-radius: 10px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+  text-align: center;
 }
 
-.event-grid .card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
-}
-
-.event-grid h4 {
+.event-list li h4 {
   margin: 0 0 10px;
-  font-size: 1.4rem;
-  color: #0078D4;
+  font-size: 1.2rem;
+  color: #2980b9;
 }
 
-.event-grid p {
+.event-list li p {
   margin: 5px 0;
+}
+
+.card {
+  align-items: center;
+}
+
+/* Welcome Section */
+#welcome-section {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+#welcome-section h2 {
+  font-size: 1.8rem;
+  color: #2c3e50;
+}
+
+#welcome-section p {
+  font-size: 1.1rem;
   color: #7f8c8d;
 }
 
-/* Responsive Design */
-@media (max-width: 1200px) {
-  .event-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
+#welcome-section .btn-primary {
+  margin-top: 20px;
+  padding-bottom: 4%;
 }
 
+/* Event Section */
+#event-section {
+  margin-top: 30px;
+  padding: 20px;
+}
+
+#event-title {
+  text-align: center;
+  margin-top: 20px;
+}
+
+#event-section h2 {
+  font-size: 1.5rem;
+  text-align: center;
+  color: #34495e;
+}
+
+#event-section p {
+  text-align: center;
+}
+
+/* Custom toggle switch (on/off) */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 60px;
+  height: 34px;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: .4s;
+}
+
+.slider.round {
+  border-radius: 34px;
+}
+
+.slider.round:before {
+  border-radius: 50%;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 26px;
+  width: 26px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  transition: .4s;
+}
+
+input:checked + .slider {
+  background-color: #2980b9;
+}
+
+input:checked + .slider:before {
+  transform: translateX(26px);
+}
+
+/* Responsive Design */
 @media (max-width: 900px) {
-  .event-grid {
+  .event-list {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 
 @media (max-width: 600px) {
-  .event-grid {
+  .event-list {
     grid-template-columns: 1fr;
   }
 
-  .container {
-    padding: 10px;
+  body {
+    font-size: 0.9rem;
   }
 
   h1, h2, h3 {
     font-size: 1.5rem;
   }
 
+  .container {
+    padding: 10px;
+  }
+
   .btn {
     font-size: 0.9rem;
-    padding: 10px 20px;
+    padding: 8px 15px;
   }
 
   button[type="submit"] {
     font-size: 1rem;
   }
+}
+
+/* Ensure footer stays at bottom even with less content */
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.footer-container {
+  background-color: #34495e;
+  padding: 10px;
+  text-align: center;
+  color: white;
+  margin-top: auto;
+  bottom: 0;
+  width: 100%;
 }

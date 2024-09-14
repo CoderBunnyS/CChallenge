@@ -1,25 +1,29 @@
 extends layout
 
 block content
-  h1= event.name
-  p Date: #{event.date}
-  p Location: #{event.location}
+  .container
+    h1= event.name
+    p Date: #{event.date}
+    p Location: #{event.location}
 
-  // Check if the user is logged in
-  if user && user.registrations && user.registrations[0].roles
-    // Check if the user is an admin
-    if user.registrations[0].roles.includes('Admin')
-      a(href=`/events/${event.id}/edit` class='btn btn-secondary') Edit Event
-      form(action=`/events/${event.id}/delete` method="POST" style="display:inline-block;")
-        button(type="submit" class="btn btn-danger") Delete Event
+    // Check if the user is logged in and has roles
+    if user && user.registrations && user.registrations[0].roles
+      .button-container
+        // Check if the user is an admin
+        if user.registrations[0].roles.includes('Admin')
+          a(href=`/events/${event.id}/edit` class='btn btn-secondary') Edit Event
+          form(action=`/events/${event.id}/delete` method="POST" style="display:inline-block;")
+            button(type="submit" class="btn btn-danger") Delete Event
 
-    // If not admin, check if the user is an editor
-    if user.registrations[0].roles.includes('Editor')
-      a(href=`/events/${event.id}/edit` class='btn btn-secondary') Edit Event
+        // If not admin, check if the user is an editor
+        if user.registrations[0].roles.includes('Editor')
+          a(href=`/events/${event.id}/edit` class='btn btn-secondary') Edit Event
 
-    // If the user is only a viewer
-    if user.registrations[0].roles.includes('Viewer')
-      p You have viewing access only.
+        // If the user is only a viewer
+        if user.registrations[0].roles.includes('Viewer')
+          p You have viewing access only.
 
-  else
-    p You are not authorized to view this content.
+    else
+      p You are not authorized to view this content.
+
+

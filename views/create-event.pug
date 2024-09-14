@@ -1,19 +1,21 @@
 extends layout
 
 block content
-  h1= title
+  .container
+    h1= title
 
-  form(action="/create-event" method="POST")
-    div.form-group
-      label(for="name") Event Name
-      input(type="text" name="name" id="name" required)
+    form(action="/create-event" method="POST")
+      div.form-group
+        label(for="name") Event Name
+        input#name.form-control(type="text" name="name" required)
 
-    div.form-group
-      label(for="date") Event Date
-      input(type="date" name="date" id="date" required)
+      div.form-group
+        label(for="date") Event Date
+        input#date.form-control(type="date" name="date" required)
 
-    div.form-group
-      label(for="location") Event Location
-      input(type="text" name="location" id="location" required)
+      div.form-group
+        label(for="location") Event Location
+        input#location.form-control(type="text" name="location" required)
 
-    button(type="submit" class="btn btn-primary") Create Event
+      .button-container
+        button(type="submit" class="btn btn-primary") Create Event

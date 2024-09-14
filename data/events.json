@@ -2,7 +2,7 @@
   {
     "id": 3,
     "name": "Community Picnic",
-    "date": "2024-09-14",
+    "date": "2024-09-15",
     "location": "Your neighborhood park"
   },
   {
@@ -22,5 +22,17 @@
     "name": "Pickup Baseball game",
     "date": "2024-09-25",
     "location": "The local park"
+  },
+  {
+    "id": 7,
+    "name": "Game night",
+    "date": "2024-09-27",
+    "location": "Your Neighbor's House"
+  },
+  {
+    "id": 8,
+    "name": "Mini Golf Tournament",
+    "date": "2024-09-30",
+    "location": "Putt Putt Golf"
   }
 ]
