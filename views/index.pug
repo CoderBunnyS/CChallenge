@@ -14,10 +14,12 @@ block content
     h2 Plan Your Next Event
     p Organize your events and invite guests with ease.
 
-    if user
+    if user && user.registrations && (user.registrations[0].roles.includes('Admin') || user.registrations[0].roles.includes('Editor'))
       a(href="/create-event" class="btn btn-primary large-btn") Create New Event
+    else if user && user.registrations && user.registrations[0].roles.includes('Viewer')
+      p You have viewing access only. You cannot create events.
     else
-      p You need to log in to create or manage events.
+      p You need to log in to view event details.
 
   // Upcoming Events Section
   div#event-section
@@ -28,7 +30,6 @@ block content
           div.card
             h4#event-title #{event.name}
             p Date: #{event.date}
-            //- p Location: #{event.location}
             if user && user.registrations && (user.registrations[0].roles.includes('Admin') || user.registrations[0].roles.includes('Editor') || user.registrations[0].roles.includes('Viewer'))
               a(href=`/events/${event.id}` class='btn btn-secondary') View Details
     else

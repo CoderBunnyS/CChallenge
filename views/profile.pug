@@ -1,41 +1,54 @@
 extends layout
 
 block content
-  h1 Profile Page
-  if success
-    p.alert.alert-success Changes saved successfully!
-  if error
-    p.alert.alert-danger Error occurred, please try again.
+  .container
+    h1 Profile Page
 
-  h2 User Information
-  //p Username: #{user.username}
-  p Email: #{user.email}
+    if success
+      p.alert.alert-success Changes saved successfully!
+    if error
+      p.alert.alert-danger Error occurred, please try again.
 
-  // Profile Data Update Form
-  h2 Update Your Profile
-  form(method="POST", action="/profile/update")
-    .form-group
-      label(for="nickname") Nickname:
-      input.form-control(type="text", name="nickname", value=user.data.nickname || '')
-    .form-group
-      label(for="favoriteEvent") Favorite Event:
-      input.form-control(type="text", name="favoriteEvent", value=user.data.favoriteEvent || '')
-    .form-group
-      label(for="hobby") Hobby:
-      input.form-control(type="text", name="hobby", value=user.data.hobby || '')
-    button.btn.btn-primary(type="submit") Update Profile
+    // User Information Section
+    h2 User Information
+    p Email: #{user.email}
 
-  // MFA Section
-  h2 Multi-Factor Authentication (MFA)
-  if is2FAEnabled
-    p.alert.alert-info MFA is currently enabled.
-    form(method="POST", action="/profile/mfa-toggle")
-      input(type="hidden", name="action", value="disable")
+    // Profile Data Update Form
+    h2 Update Your Profile
+    form(method="POST", action="/profile/update")
       .form-group
-        label(for="totpCode") Enter the TOTP code to disable MFA:
-        input.form-control(type="text", name="totpCode", required)
-      button.btn.btn-danger(type="submit") Disable MFA
-  else
-    p.alert.alert-warning MFA is not enabled.
-    form(method="POST", action="/profile/mfa-enable")
-      button.btn.btn-success(type="submit") Enable MFA
+        label(for="nickname") Nickname:
+        input.form-control(type="text", name="nickname", value=user.data.nickname || '')
+      .form-group
+        label(for="favoriteEvent") Favorite Event:
+        input.form-control(type="text", name="favoriteEvent", value=user.data.favoriteEvent || '')
+      .form-group
+        label(for="hobby") Hobby:
+        input.form-control(type="text", name="hobby" value=user.data.hobby || '')
+      .button-container
+        button.btn.btn-primary(type="submit") Update Profile
+
+    // MFA Section with status and toggle switch
+    h2 Multi-Factor Authentication (MFA)
+    
+    // Display the current MFA status
+    if is2FAEnabled
+      p.alert.alert-info MFA is currently enabled.
+    else
+      p.alert.alert-warning MFA is currently disabled.
+
+    // MFA Toggle switch
+    .form-group
+      label(for="mfa-toggle") Toggle Two-Factor Authentication:
+      .switch
+        input#mfa-toggle(type="checkbox" name="mfaToggle" checked=is2FAEnabled)
+        span.slider.round
+
+    // Handle MFA toggle form submission
+    form(method="POST", action="/profile/mfa-toggle")
+      input(type="hidden", name="action", value=is2FAEnabled ? "disable" : "enable")
+      .form-group
+        label(for="totpCode") Enter the TOTP code to #{is2FAEnabled ? 'disable' : 'enable'} MFA:
+        input.form-control(type="text" name="totpCode" required)
+      .button-container
+        button.btn.btn-primary(type="submit") #{is2FAEnabled ? 'Disable' : 'Enable'} MFA

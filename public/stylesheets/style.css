@@ -246,7 +246,15 @@ button[type="submit"]:hover {
   text-align: center;
 }
 
-/* Custom toggle switch (on/off) */
+/* Wrapper for the toggle switch to ensure centering */
+.switch-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 20px; /* Add spacing if needed */
+}
+
+/* Toggle Switch Styling */
 .switch {
   position: relative;
   display: inline-block;
@@ -291,12 +299,13 @@ button[type="submit"]:hover {
 }
 
 input:checked + .slider {
-  background-color: #2980b9;
+  background-color: #28a745; /* Green when enabled */
 }
 
 input:checked + .slider:before {
   transform: translateX(26px);
 }
+
 
 /* Responsive Design */
 @media (max-width: 900px) {
