@@ -74,7 +74,6 @@ nav a:hover {
   color: white;
   margin-top: auto;
   width: 100%;
-  bottom: 0;
 }
 
 /* Form Layout */
@@ -260,12 +259,14 @@ button[type="submit"]:hover {
   display: inline-block;
   width: 60px;
   height: 34px;
+  z-index: 10; /* Bring to front for debugging */
+  border: 2px solid red; /* Temporary debugging border */
 }
 
 .switch input {
-  opacity: 0;
-  width: 0;
-  height: 0;
+  opacity: 1; /* Remove opacity for debugging */
+  width: 60px;
+  height: 34px;
 }
 
 .slider {
@@ -277,6 +278,7 @@ button[type="submit"]:hover {
   bottom: 0;
   background-color: #ccc;
   transition: .4s;
+  background-color: yellow; /* Debugging background */
 }
 
 .slider.round {
@@ -305,7 +307,6 @@ input:checked + .slider {
 input:checked + .slider:before {
   transform: translateX(26px);
 }
-
 
 /* Responsive Design */
 @media (max-width: 900px) {

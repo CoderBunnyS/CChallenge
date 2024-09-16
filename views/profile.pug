@@ -24,31 +24,92 @@ block content
         input.form-control(type="text", name="favoriteEvent", value=user.data.favoriteEvent || '')
       .form-group
         label(for="hobby") Hobby:
-        input.form-control(type="text", name="hobby" value=user.data.hobby || '')
+        input.form-control(type="text", name="hobby", value=user.data.hobby || '')
       .button-container
         button.btn.btn-primary(type="submit") Update Profile
 
-    // MFA Section with status and toggle switch
+    // MFA Section with button for enabling/disabling MFA
     h2 Multi-Factor Authentication (MFA)
-    
-    // Display the current MFA status
-    if is2FAEnabled
-      p.alert.alert-info MFA is currently enabled.
-    else
-      p.alert.alert-warning MFA is currently disabled.
-
-    // MFA Toggle switch
     .form-group
-      label(for="mfa-toggle") Toggle Two-Factor Authentication:
-      .switch
-        input#mfa-toggle(type="checkbox" name="mfaToggle" checked=is2FAEnabled)
-        span.slider.round
+      if is2FAEnabled
+        button#disableMFAButton.btn.btn-danger Disable MFA
+        p.alert.alert-info MFA is currently enabled.
+      else
+        button#enableMFAButton.btn.btn-primary Enable MFA
+        p.alert.alert-warning MFA is currently disabled.
 
-    // Handle MFA toggle form submission
-    form(method="POST", action="/profile/mfa-toggle")
-      input(type="hidden", name="action", value=is2FAEnabled ? "disable" : "enable")
-      .form-group
-        label(for="totpCode") Enter the TOTP code to #{is2FAEnabled ? 'disable' : 'enable'} MFA:
-        input.form-control(type="text" name="totpCode" required)
-      .button-container
-        button.btn.btn-primary(type="submit") #{is2FAEnabled ? 'Disable' : 'Enable'} MFA
+    // MFA Setup Modal (shown only when enabling MFA)
+    #mfaModal.modal.fade
+      .modal-dialog
+        .modal-content
+          .modal-header
+            h5.modal-title MFA Setup
+            button(type="button" class="close" data-dismiss="modal") &times;
+          .modal-body
+            p Scan the following QR code with your authenticator app:
+            img#qrCode(src="#" alt="QR Code")
+            p Or, use the following secret:
+            span#secret-key
+          .modal-footer
+            form(id="mfa-form" method="POST" action="/profile/mfa-verify")
+              label(for="totpCode") Enter the code from your authenticator app:
+              input#totpCode(type="text" name="totpCode" required)
+              button.btn.btn-primary(type="submit") Verify & Enable MFA
+
+block scripts
+  script.
+    // Script for enabling and disabling MFA
+    document.addEventListener('DOMContentLoaded', function() {
+      const enableMFAButton = document.getElementById('enableMFAButton');
+      const disableMFAButton = document.getElementById('disableMFAButton');
+      const mfaModal = document.getElementById('mfaModal');
+      const qrCodeImg = document.getElementById('qrCode');
+      const secretKeySpan = document.getElementById('secret-key');
+
+      // Enable MFA
+      if (enableMFAButton) {
+        enableMFAButton.addEventListener('click', function() {
+          fetch('/profile/mfa-setup', { method: 'POST' })
+            .then(response => response.json())
+            .then(data => {
+              qrCodeImg.src = data.qrCodeUrl;
+              secretKeySpan.textContent = data.secret;
+              mfaModal.style.display = 'block'; // Show modal
+              mfaModal.classList.add('show');
+            })
+            .catch(err => {
+              console.error('Error during MFA setup:', err);
+              alert('Error setting up MFA.');
+            });
+        });
+      }
+
+      // Disable MFA
+      if (disableMFAButton) {
+        disableMFAButton.addEventListener('click', function() {
+          const totpCode = prompt("Please enter the TOTP code from your authenticator to disable MFA:");
+
+          if (totpCode) {
+            fetch('/profile/mfa-toggle', {
+              method: 'DELETE',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ totpCode: totpCode }),
+            })
+            .then(response => {
+              if (response.ok) {
+                alert('MFA disabled successfully.');
+                location.reload();
+              } else {
+                alert('Error disabling MFA.');
+              }
+            })
+            .catch(err => {
+              console.error('Error disabling MFA:', err);
+              alert('Error disabling MFA.');
+            });
+          }
+        });
+      }
+    });

@@ -10,7 +10,8 @@ const path = require("path");
 const clientId = process.env.CLIENT_ID;
 const clientSecret = process.env.CLIENT_SECRET;
 const fusionAuthURL = process.env.BASE_URL;
-const client = new FusionAuthClient("DevKey8675309", fusionAuthURL);
+const apiKey = process.env.FUSIONAUTH_API_KEY || 'DevKey8675309';
+const client = new FusionAuthClient(apiKey, fusionAuthURL);
 
 //===========================================
 //== Event Management Section (CRUD) ========
@@ -41,7 +42,6 @@ function writeEventsToFile(events) {
 
 // Home Page Route (Read events)
 router.get("/", function (req, res) {
- 
   const stateValue =
     Math.random().toString(36).substring(2, 15) +
     Math.random().toString(36).substring(2, 15);
@@ -142,7 +142,6 @@ router.get("/events/:id", (req, res) => {
     res.status(403).send("You need to log in to view event details.");
   }
 });
-
 
 // Edit Event Page (GET)
 router.get("/events/:id/edit", (req, res) => {
@@ -255,6 +254,7 @@ router.get("/oauth-redirect", function (req, res) {
     return;
   }
 
+  // Exchange OAuth code for access token and retrieve user
   client
     .exchangeOAuthCodeForAccessTokenUsingPKCE(
       req.query.code,
@@ -264,13 +264,20 @@ router.get("/oauth-redirect", function (req, res) {
       req.session.verifier
     )
     .then((response) => {
+      // Use JWT to retrieve user information
       return client.retrieveUserUsingJWT(response.response.access_token);
     })
     .then((response) => {
-      req.session.user = response.response.user;
-      req.session.customData = response.response.user.data; // Store custom data in session
-      //console.log("User logged in successfully:", req.session.user); // Log the user details
-      console.log("User Roles:", req.session.user.registrations[0].roles); // Log roles directly, if available
+      const user = response.response.user;
+
+      // Log the full user object to the terminal
+      console.log("Logged in user:", JSON.stringify(user, null, 2));
+
+      // Store the user information in the session
+      req.session.user = user;
+      req.session.customData = user.data; // Store custom data in session
+      
+      // Redirect user after login
       res.redirect(req.session.redirectUri || "/");
     })
     .catch((err) => {
@@ -278,6 +285,7 @@ router.get("/oauth-redirect", function (req, res) {
       res.redirect(302, "/");
     });
 });
+
 
 //===========================================
 //== Profile and MFA Management Section =====
@@ -298,6 +306,11 @@ router.get("/profile", (req, res) => {
         user.twoFactor.methods &&
         user.twoFactor.methods.length > 0;
 
+      // Log the twoFactor methods array to see the structure
+      if (is2FAEnabled) {
+        console.log("Two-Factor Methods:", user.twoFactor.methods);
+      }
+
       res.render("profile", {
         user,
         is2FAEnabled, // Pass 2FA status to the profile template
@@ -309,45 +322,43 @@ router.get("/profile", (req, res) => {
     });
 });
 
-// Enable MFA (POST)
-router.post("/profile/mfa-enable", (req, res) => {
+
+
+// MFA Setup Route (POST)
+router.post("/profile/mfa-setup", (req, res) => {
   if (!req.session.user) {
     return res.redirect("/"); // Redirect if not logged in
   }
 
-  const userId = req.session.user.id;
-
   // Generate a secret for the user
-  client
-    .generateTwoFactorSecret()
-    .then((response) => {
-      const secret = response.response.secretBase32Encoded;
+  client.generateTwoFactorSecret().then(response => {
+    const secret = response.response.secretBase32Encoded;
 
-      console.log("2FA Secret generated:", secret);
-      req.session.twoFactorSecret = secret; // Store secret in the session
+    console.log("2FA Secret generated:", secret);
+    req.session.twoFactorSecret = secret; // Store secret in the session
 
-      res.render("mfa-setup", {
-        title: "Set Up MFA",
-        user: req.session.user,
-        secret,
-        qrCodeUrl: `otpauth://totp/${req.session.user.username}?secret=${secret}&issuer=YourAppName`, // Customize issuer
-      });
-    })
-    .catch((err) => {
-      console.error("Error generating 2FA secret:", err);
-      res.redirect("/profile?error=true");
+    // Send the secret and QR code back to the client
+    res.json({
+      secret,
+      qrCodeUrl: `otpauth://totp/${req.session.user.username}?secret=${secret}&issuer=YourAppName`, // Customize issuer
     });
+  }).catch(err => {
+    console.error("Error generating 2FA secret:", err);
+    res.status(500).json({ error: "Failed to generate secret." });
+  });
 });
 
-// Verify MFA (POST)
+// Verify and Enable MFA (POST)
 router.post("/profile/mfa-verify", (req, res) => {
   if (!req.session.user) {
     return res.redirect("/"); // Redirect if not logged in
   }
 
-  const { totpCode, secret } = req.body;
+  const { totpCode } = req.body; // User-provided TOTP code
+  const secret = req.session.twoFactorSecret; // Retrieved from the session
   const userId = req.session.user.id;
 
+  // Verify the TOTP code
   client
     .verifyTwoFactorCode(userId, {
       code: totpCode,
@@ -355,53 +366,82 @@ router.post("/profile/mfa-verify", (req, res) => {
       method: "authenticator",
     })
     .then(() => {
+      // Successfully verified, now update the user’s twoFactor object
+      const twoFactor = {
+        methods: [
+          {
+            method: "authenticator",
+            secret: secret,
+          },
+        ],
+      };
+
+      // Update the user profile to include the twoFactor information
+      return client.patchUser(userId, {
+        user: {
+          twoFactor: twoFactor,
+        },
+      });
+    })
+    .then(() => {
       console.log("2FA successfully enabled for user:", userId);
+      req.session.user.twoFactor = {
+        methods: [{ method: "authenticator" }],
+      };
       res.redirect("/profile?success=true");
     })
     .catch((err) => {
-      console.error("Error verifying 2FA:", err);
+      console.error("Error verifying/enabling 2FA:", err);
       res.redirect("/profile?error=true");
     });
 });
 
-// Disable MFA (POST) using Axios
-router.post("/profile/mfa-toggle", (req, res) => {
+router.delete("/profile/mfa-toggle", (req, res) => {
   if (!req.session.user) {
-    return res.redirect("/"); // Redirect if not logged in
+    return res.status(401).json({ error: 'Not authorized' }); // Ensure the user is logged in
   }
 
-  const { action, totpCode } = req.body;
-  const userId = req.session.user.id;
+  const { totpCode } = req.body;  // The TOTP code the user provides
+  const userId = req.session.user.id;  // The user's ID
 
-  if (action === "disable") {
-    if (!totpCode) {
-      return res.redirect("/profile?error=no_code");
-    }
-
-    const apiKey = process.env.FUSIONAUTH_API_KEY || 'DevKey8675309';
-
-    axios
-      .delete(`http://localhost:9011/api/user/two-factor/${userId}`, {
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-        },
-        params: {
-          code: totpCode,
-          methodId: "authenticator", // Only allowing authenticator as MFA
-        },
-      })
-      .then(() => {
-        req.session.user.twoFactor = null;
-        res.redirect("/profile?success=true");
-      })
-      .catch((error) => {
-        res.redirect("/profile?error=true");
-      });
-  } else {
-    res.redirect("/profile?error=true");
+  if (!totpCode) {
+    return res.status(400).json({ error: 'TOTP code is required' });
   }
+
+  // Step 1: Retrieve the user from FusionAuth to check two-factor details
+  client.retrieveUser(userId)
+    .then((response) => {
+      const user = response.response.user;
+
+      // Step 2: Check if user has any twoFactor methods and proceed
+      if (user.twoFactor && user.twoFactor.methods && user.twoFactor.methods.length > 0) {
+        // Step 3: Delete all the twoFactor methods by clearing the methods array
+        return client.patchUser(userId, {
+          user: {
+            twoFactor: {
+              methods: []  // Clear the methods array
+            }
+          }
+        });
+      } else {
+        // If no two-factor methods exist, there's nothing to disable
+        return Promise.reject(new Error('No two-factor methods enabled.'));
+      }
+    })
+    .then(() => {
+      console.log(`MFA disabled successfully for user: ${userId}`);
+      req.session.user.twoFactor = null;  // Clear the twoFactor data in the session
+      res.status(200).json({ message: 'MFA disabled successfully' });
+    })
+    .catch((error) => {
+      console.error('Error disabling MFA:', error.response ? error.response.data : error.message);
+      res.status(500).json({ error: 'Error disabling MFA' });
+    });
 });
+
+
+
+
 
 // Profile Update (POST)
 router.post("/profile/update", (req, res) => {
